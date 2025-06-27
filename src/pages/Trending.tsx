@@ -4,12 +4,23 @@ import { Button } from "@/components/ui/button";
 import { TrendingUp, Clock } from "lucide-react";
 import ContentCard from "@/components/ContentCard";
 import { mockContent } from "@/data/mockContent";
+import { useSearch } from "@/contexts/SearchContext";
 
 const Trending = () => {
   const [loadMore, setLoadMore] = useState(false);
+  const { debouncedSearchQuery } = useSearch();
   
-  // Sort by likes for trending content
-  const trendingContent = [...mockContent].sort((a, b) => b.likes - a.likes);
+  // Sort by likes for trending content and filter by search
+  let trendingContent = [...mockContent].sort((a, b) => b.likes - a.likes);
+  
+  if (debouncedSearchQuery) {
+    trendingContent = trendingContent.filter(item =>
+      item.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      item.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      item.category.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+    );
+  }
+  
   const displayContent = loadMore ? trendingContent : trendingContent.slice(0, 6);
 
   return (
@@ -19,19 +30,24 @@ const Trending = () => {
           <TrendingUp className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Trending Now</h1>
-          <p className="text-gray-600">Most popular content across all categories</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Trending Now</h1>
+          <p className="text-gray-600 dark:text-gray-400">Most popular content across all categories</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border p-6 mb-8">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-primary" />
-            <span className="font-medium">Last updated: Just now</span>
+            <span className="font-medium dark:text-white">Last updated: Just now</span>
           </div>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
             Showing {displayContent.length} of {trendingContent.length} trending items
+            {debouncedSearchQuery && (
+              <span className="ml-2 text-primary">
+                (filtered by "{debouncedSearchQuery}")
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -55,6 +71,13 @@ const Trending = () => {
           >
             Load More Trending
           </Button>
+        </div>
+      )}
+
+      {debouncedSearchQuery && displayContent.length === 0 && (
+        <div className="text-center py-16">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No results found</h3>
+          <p className="text-gray-600 dark:text-gray-400">Try adjusting your search terms</p>
         </div>
       )}
     </div>

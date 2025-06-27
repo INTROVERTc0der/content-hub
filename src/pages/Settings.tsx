@@ -1,27 +1,30 @@
 
-import { useState } from "react";
 import { Settings as SettingsIcon, User, Bell, Palette, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Settings = () => {
-  const [darkMode, setDarkMode] = useState(false);
-  const [notifications, setNotifications] = useState(true);
-  const [categories, setCategories] = useState({
-    technology: true,
-    sports: true,
-    entertainment: false,
-    finance: true,
-  });
+  const { user, preferences, updatePreferences } = useAuth();
 
   const handleCategoryChange = (category: string, enabled: boolean) => {
-    setCategories(prev => ({
-      ...prev,
-      [category]: enabled
-    }));
+    updatePreferences({
+      categories: {
+        ...preferences.categories,
+        [category]: enabled
+      }
+    });
+  };
+
+  const handleDarkModeChange = (enabled: boolean) => {
+    updatePreferences({ darkMode: enabled });
+  };
+
+  const handleNotificationsChange = (enabled: boolean) => {
+    updatePreferences({ notifications: enabled });
   };
 
   return (
@@ -31,28 +34,28 @@ const Settings = () => {
           <SettingsIcon className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-600">Customize your ContentHub experience</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
+          <p className="text-gray-600 dark:text-gray-400">Customize your ContentHub experience</p>
         </div>
       </div>
 
       <div className="space-y-6">
         {/* Profile Settings */}
-        <Card>
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 dark:text-white">
               <User className="h-5 w-5" />
               Profile Settings
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="dark:text-gray-400">
               Manage your profile information and preferences
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-base font-medium">John Doe</Label>
-                <p className="text-sm text-gray-500">Premium Member</p>
+                <Label className="text-base font-medium dark:text-white">{user?.name || 'User'}</Label>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Premium Member</p>
               </div>
               <Button variant="outline">Edit Profile</Button>
             </div>
@@ -60,17 +63,17 @@ const Settings = () => {
         </Card>
 
         {/* Content Preferences */}
-        <Card>
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
-            <CardTitle>Content Preferences</CardTitle>
-            <CardDescription>
+            <CardTitle className="dark:text-white">Content Preferences</CardTitle>
+            <CardDescription className="dark:text-gray-400">
               Choose which types of content you want to see
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {Object.entries(categories).map(([category, enabled]) => (
+            {Object.entries(preferences.categories).map(([category, enabled]) => (
               <div key={category} className="flex items-center justify-between">
-                <Label htmlFor={category} className="capitalize font-medium">
+                <Label htmlFor={category} className="capitalize font-medium dark:text-white">
                   {category}
                 </Label>
                 <Switch
@@ -84,32 +87,32 @@ const Settings = () => {
         </Card>
 
         {/* Notifications */}
-        <Card>
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 dark:text-white">
               <Bell className="h-5 w-5" />
               Notifications
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="dark:text-gray-400">
               Control how you receive updates
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-base font-medium">Push Notifications</Label>
-                <p className="text-sm text-gray-500">Get notified about trending content</p>
+                <Label className="text-base font-medium dark:text-white">Push Notifications</Label>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Get notified about trending content</p>
               </div>
               <Switch
-                checked={notifications}
-                onCheckedChange={setNotifications}
+                checked={preferences.notifications}
+                onCheckedChange={handleNotificationsChange}
               />
             </div>
-            <Separator />
+            <Separator className="dark:border-gray-600" />
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-base font-medium">Email Digest</Label>
-                <p className="text-sm text-gray-500">Weekly summary of your favorite topics</p>
+                <Label className="text-base font-medium dark:text-white">Email Digest</Label>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Weekly summary of your favorite topics</p>
               </div>
               <Switch defaultChecked />
             </div>
@@ -117,38 +120,38 @@ const Settings = () => {
         </Card>
 
         {/* Appearance */}
-        <Card>
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 dark:text-white">
               <Palette className="h-5 w-5" />
               Appearance
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="dark:text-gray-400">
               Customize the look and feel
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-base font-medium">Dark Mode</Label>
-                <p className="text-sm text-gray-500">Switch to dark theme</p>
+                <Label className="text-base font-medium dark:text-white">Dark Mode</Label>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Switch to dark theme</p>
               </div>
               <Switch
-                checked={darkMode}
-                onCheckedChange={setDarkMode}
+                checked={preferences.darkMode}
+                onCheckedChange={handleDarkModeChange}
               />
             </div>
           </CardContent>
         </Card>
 
         {/* Privacy & Security */}
-        <Card>
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 dark:text-white">
               <Shield className="h-5 w-5" />
               Privacy & Security
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="dark:text-gray-400">
               Manage your privacy settings
             </CardDescription>
           </CardHeader>

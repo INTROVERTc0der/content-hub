@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface User {
@@ -7,13 +6,38 @@ interface User {
   name: string;
 }
 
+interface UserPreferences {
+  darkMode: boolean;
+  notifications: boolean;
+  categories: {
+    technology: boolean;
+    sports: boolean;
+    entertainment: boolean;
+    finance: boolean;
+  };
+}
+
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  preferences: UserPreferences;
+  login: (email: string, password: string, name?: string) => Promise<boolean>;
   signup: (email: string, password: string, name: string) => Promise<boolean>;
   logout: () => void;
+  updatePreferences: (newPreferences: Partial<UserPreferences>) => void;
+  isAuthenticated: boolean;
   isLoading: boolean;
 }
+
+const defaultPreferences: UserPreferences = {
+  darkMode: false,
+  notifications: true,
+  categories: {
+    technology: true,
+    sports: true,
+    entertainment: false,
+    finance: true,
+  }
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -25,35 +49,76 @@ export const useAuth = () => {
   return context;
 };
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in on app start
-    const storedUser = localStorage.getItem('contentHub_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    try {
+      // Load user data from localStorage on mount
+      const savedUser = localStorage.getItem('contenthub_user');
+      const savedPreferences = localStorage.getItem('contenthub_preferences');
+      
+      if (savedUser) {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+      }
+      
+      if (savedPreferences) {
+        const parsedPreferences = JSON.parse(savedPreferences);
+        setPreferences(parsedPreferences);
+        
+        // Apply dark mode immediately
+        if (parsedPreferences.darkMode) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
+    } catch (error) {
+      console.error('Error loading saved data:', error);
+      // Reset to defaults if there's an error
+      setUser(null);
+      setPreferences(defaultPreferences);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string, name?: string): Promise<boolean> => {
     try {
-      // Check if user exists in localStorage
-      const users = JSON.parse(localStorage.getItem('contentHub_users') || '[]');
+      // Simulate API call
+      const users = JSON.parse(localStorage.getItem('contenthub_users') || '[]');
       const existingUser = users.find((u: any) => u.email === email && u.password === password);
       
       if (existingUser) {
-        const userToStore = { id: existingUser.id, email: existingUser.email, name: existingUser.name };
-        setUser(userToStore);
-        localStorage.setItem('contentHub_user', JSON.stringify(userToStore));
+        const userData = {
+          id: existingUser.id,
+          email: existingUser.email,
+          name: existingUser.name
+        };
+        setUser(userData);
+        localStorage.setItem('contenthub_user', JSON.stringify(userData));
+        
+        // Load user's preferences
+        const userPreferences = localStorage.getItem(`contenthub_preferences_${existingUser.id}`);
+        if (userPreferences) {
+          const parsedPreferences = JSON.parse(userPreferences);
+          setPreferences(parsedPreferences);
+          localStorage.setItem('contenthub_preferences', JSON.stringify(parsedPreferences));
+          
+          // Apply dark mode
+          if (parsedPreferences.darkMode) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        }
+        
         return true;
       }
+      
       return false;
     } catch (error) {
       console.error('Login error:', error);
@@ -63,29 +128,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signup = async (email: string, password: string, name: string): Promise<boolean> => {
     try {
-      // Get existing users or create empty array
-      const users = JSON.parse(localStorage.getItem('contentHub_users') || '[]');
+      const users = JSON.parse(localStorage.getItem('contenthub_users') || '[]');
+      const existingUser = users.find((u: any) => u.email === email);
       
-      // Check if user already exists
-      if (users.find((u: any) => u.email === email)) {
+      if (existingUser) {
         return false; // User already exists
       }
-
-      // Create new user
+      
       const newUser = {
         id: Date.now().toString(),
         email,
         password,
         name
       };
-
+      
       users.push(newUser);
-      localStorage.setItem('contentHub_users', JSON.stringify(users));
-
-      // Auto-login after signup
-      const userToStore = { id: newUser.id, email: newUser.email, name: newUser.name };
-      setUser(userToStore);
-      localStorage.setItem('contentHub_user', JSON.stringify(userToStore));
+      localStorage.setItem('contenthub_users', JSON.stringify(users));
+      
+      const userData = {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name
+      };
+      
+      setUser(userData);
+      localStorage.setItem('contenthub_user', JSON.stringify(userData));
+      
+      // Set default preferences for new user
+      setPreferences(defaultPreferences);
+      localStorage.setItem('contenthub_preferences', JSON.stringify(defaultPreferences));
+      localStorage.setItem(`contenthub_preferences_${newUser.id}`, JSON.stringify(defaultPreferences));
       
       return true;
     } catch (error) {
@@ -96,14 +168,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('contentHub_user');
+    localStorage.removeItem('contenthub_user');
+    localStorage.removeItem('contenthub_preferences');
+    document.documentElement.classList.remove('dark');
   };
 
-  const value = {
+  const updatePreferences = (newPreferences: Partial<UserPreferences>) => {
+    try {
+      const updatedPreferences = { ...preferences, ...newPreferences };
+      setPreferences(updatedPreferences);
+      localStorage.setItem('contenthub_preferences', JSON.stringify(updatedPreferences));
+      
+      if (user) {
+        localStorage.setItem(`contenthub_preferences_${user.id}`, JSON.stringify(updatedPreferences));
+      }
+      
+      // Apply dark mode changes immediately
+      if ('darkMode' in newPreferences) {
+        if (newPreferences.darkMode) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
+    } catch (error) {
+      console.error('Error updating preferences:', error);
+    }
+  };
+
+  const value: AuthContextType = {
     user,
+    preferences,
     login,
     signup,
     logout,
+    updatePreferences,
+    isAuthenticated: !!user,
     isLoading,
   };
 
