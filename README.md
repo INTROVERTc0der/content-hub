@@ -20,7 +20,7 @@ ContentHub is a modern, responsive, and customizable content dashboard that allo
 
 ## 🖥️ Demo & Screenshots
 
-![Dashboard Screenshot](https://lovable.dev/opengraph-image-p98pqg.png)
+![Dashboard Screenshot](https://drive.google.com/file/d/1VF37cTqVXmZv-kZfE0_Uchf4juds-HHD/view?usp=sharing)
 
 ---
 
