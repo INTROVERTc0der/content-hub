@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -38,7 +37,7 @@ const navigationItems = [
 ];
 
 const AppSidebar = () => {
-  const { collapsed } = useSidebar();
+  const { state } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
 
@@ -54,8 +53,10 @@ const AppSidebar = () => {
       : "hover:bg-gray-100 text-gray-700";
   };
 
+  const isCollapsed = state === "collapsed";
+
   return (
-    <Sidebar className={collapsed ? "w-16" : "w-64"} collapsible>
+    <Sidebar className={isCollapsed ? "w-16" : "w-64"} collapsible="icon">
       <SidebarContent className="bg-white border-r">
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider text-gray-500 font-medium px-3 py-2">
@@ -71,7 +72,7 @@ const AppSidebar = () => {
                       className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${getNavClassName(item.url)}`}
                     >
                       <item.icon className="h-5 w-5 flex-shrink-0" />
-                      {!collapsed && <span className="font-medium">{item.title}</span>}
+                      {!isCollapsed && <span className="font-medium">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
